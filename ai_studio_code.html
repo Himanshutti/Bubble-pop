@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bubble Pop!</title>
+    <style>
+        /* CSS styles bilkul pehle jaise hain, koi badlav nahi */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Baloo+Bhai+2:wght@700&display=swap');
+        :root{--sky-blue:#87CEEB;--white:#FFFFFF;--yellow:#FFD700;--char-color:#3a3a3a;}
+        body,html{margin:0;padding:0;width:100%;height:100vh;overflow:hidden;font-family:'Fredoka One',cursive;background:linear-gradient(to bottom,var(--sky-blue),#a1dff7);user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+        .screen{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:absolute;top:0;left:0;}
+        #start-screen{gap:20px;z-index:10;}
+        #game-screen{display:none;}
+        .game-title{font-size:clamp(3em,12vw,5em);color:var(--white);text-shadow:0 5px 10px rgba(0,0,0,0.25);}
+        .mode-button{background-color:var(--yellow);color:var(--char-color);border:5px solid var(--white);border-radius:25px;padding:20px 40px;font-size:clamp(1.8em,6vw,2.5em);cursor:pointer;box-shadow:0 8px 15px rgba(0,0,0,0.2);transition:transform 0.1s ease;}
+        .mode-button:active{transform:scale(0.95);}
+        .hindi-button{font-family:'Baloo Bhai 2',sans-serif;font-weight:700;}
+        #ui-bar{position:fixed;top:15px;width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 20px;box-sizing:border-box;z-index:100;}
+        .ui-button{width:60px;height:60px;background-color:rgba(255,255,255,0.8);border:3px solid var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 10px rgba(0,0,0,0.2);cursor:pointer;font-size:1.8em;}
+        #score-display{background-color:rgba(255,255,255,0.8);padding:10px 25px;border-radius:20px;font-size:1.5em;color:var(--char-color);border:3px solid var(--white);box-shadow:0 5px 10px rgba(0,0,0,0.2);}
+        #bubble-container{width:100%;height:100%;position:absolute;top:0;left:0;}
+        .bubble{position:absolute;bottom:-150px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:3px solid rgba(255,255,255,0.5);box-shadow:inset 0 0 15px rgba(255,255,255,0.6),0 5px 15px rgba(0,0,0,0.2);cursor:pointer;animation:float-up linear forwards;}
+        .bubble.popped{transition:transform 0.2s,opacity 0.2s;transform:scale(1.2);opacity:0;pointer-events:none;}
+        .bubble-char{font-size:3em;color:var(--char-color);text-shadow:0 2px 3px rgba(0,0,0,0.15);}
+        @keyframes float-up{to{transform:translateY(-120vh) scale(1.1);}}
+        .pop-effect{position:fixed;z-index:200;width:100px;height:100px;background-image:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48cmFkaWFsR3JhZGllbnQgaWQ9ImciIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZmQ3MDAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNmZjZlMGEiIHN0b3Atb3BhY2l0eT0iMCIvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGZpbGw9InVybCgjZykiIGQ9Ik01MCwgMCBMIDYxLjc2LCAzNS4yOCBMIDk4Ljc4LCAzOC4yIEwgNzAuODksIDYzLjUxIEwgNzguNTYsIDk4Ljc4IEwgNTAsIDgwLjg4IEwgMjEuNDQsIDk4Ljc4IEwgMjkuMTEsIDYzLjUxIEwgMS4yMiwgMzguMiBMIDM4LjI0LCAzNS4yOCBaIi8+PC9zdmc+');background-size:contain;background-position:center;background-repeat:no-repeat;transform:scale(0);opacity:0;pointer-events:none;animation:burst 0.5s ease-out forwards;}
+        @keyframes burst{0%{transform:scale(0) rotate(0deg);opacity:1;}50%{transform:scale(1.5) rotate(180deg);}100%{transform:scale(1) rotate(360deg);opacity:0;}}
+        #helper-animal{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:120px;height:100px;z-index:50;transition:transform 0.2s ease;}
+        #helper-animal.happy{transform:translateX(-50%) scale(1.1) translateY(-10px);}
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" class="screen">
+        <h1 class="game-title">Bubble Pop!</h1>
+        <button class="mode-button" onclick="startGame('english')">ABC</button>
+        <button class="mode-button" onclick="startGame('numbers')">123</button>
+        <button class="mode-button hindi-button" onclick="startGame('hindi')">अ आ इ</button>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="ui-bar">
+            <button class="ui-button" onclick="showMenu()">🏠</button>
+            <div id="score-display">Score: 0</div>
+            <div class="ui-button" style="background:transparent;border:none;box-shadow:none;"></div>
+        </div>
+        <div id="bubble-container"></div>
+        <div id="helper-animal">
+            <svg viewBox="0 0 100 80"><path d="M49.6,75.4c-4.8-0.8-13.4-3.4-17.4-6.3c-3.1-2.2-3.8-5.4-4-7.4c-0.2-2.3,0.6-5.8,1.6-7.8c2.9-5.9,8-3.5,9.3-3 c1.3,0.5,6.3,2.5,10,2.1c3.1-0.4,8-3.4,11.2-3.1c2.5,0.2,8.4,2.3,10.5,6.3c1.7,3.2,1.5,6.4,1.4,8.1c-0.1,2.1-1.2,5.7-4,7.5 C64.4,72.4,54.2,76.1,49.6,75.4z M34.1,28.2c0,3.9-3.1,7-7,7s-7-3.1-7-7s3.1-7,7-7S34.1,24.3,34.1,28.2z M80.4,28.2 c0,3.9-3.1,7-7,7s-7-3.1-7-7s3.1-7,7-7S80.4,24.3,80.4,28.2z" fill="#a05a2c"></path><path d="M50,49.5c-6.2,0-11,4.4-11.8,5.2c-0.5,0.5-0.5,1.3,0,1.8c0.7,0.7,8.2,7.3,11.8,7.3s11.1-6.6,11.8-7.3 c0.5-0.5,0.5-1.3,0-1.8C61,53.9,56.2,49.5,50,49.5z" fill="#ffffff"></path></svg>
+        </div>
+    </div>
+
+    <!-- AUDIO FILES: loop attribute ensures basic looping -->
+    <audio id="pop-sound" preload="auto" src="assets/pop.mp3"></audio>
+    <audio id="bgm-sound" loop preload="auto" src="assets/bgm.mp3"></audio>
+
+    <script>
+        // --- GAME DATA ---
+        const gameData = {
+            english: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+            numbers: '0123456789'.split(''),
+            hindi: 'अआइईउऊऋएऐओऔकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसह'.split('')
+        };
+        const bubbleColors = ['rgba(255,105,180,0.8)','rgba(255,215,0,0.8)','rgba(199,146,234,0.8)','rgba(195,232,141,0.8)'];
+
+        // --- GAME STATE ---
+        let currentChars = [], bubbleInterval, score = 0;
+
+        // --- DOM & SOUND ELEMENTS ---
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const bubbleContainer = document.getElementById('bubble-container');
+        const scoreDisplay = document.getElementById('score-display');
+        const helperAnimal = document.getElementById('helper-animal');
+        const popSound = document.getElementById('pop-sound');
+        const bgmSound = document.getElementById('bgm-sound');
+
+        // ==========================================================
+        // === नया कोड: BGM को हमेशा LOOP में चलाने के लिए  ===
+        // ==========================================================
+        bgmSound.addEventListener('ended', function() {
+            this.currentTime = 0;
+            this.play();
+        }, false);
+        // ==========================================================
+
+        // --- UTILITY ---
+        const random = (min, max) => Math.random() * (max - min) + min;
+
+        // --- GAME FLOW ---
+        function startGame(mode) {
+            currentChars = gameData[mode];
+            score = 0;
+            updateScore();
+            
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'flex';
+            
+            bgmSound.play().catch(e => console.log("User needs to interact with the page first."));
+
+            bubbleInterval = setInterval(createBubble, 1100);
+        }
+
+        function showMenu() {
+            clearInterval(bubbleInterval);
+            bubbleContainer.innerHTML = '';
+            
+            bgmSound.pause();
+            bgmSound.currentTime = 0;
+
+            gameScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+        }
+
+        // --- CORE GAMEPLAY ---
+        function createBubble() {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = random(70,130), duration = random(7,14), horizontalPos = random(5,95), color = bubbleColors[Math.floor(random(0,bubbleColors.length))];
+            bubble.style.width = `${size}px`;
+            bubble.style.height = `${size}px`;
+            bubble.style.left = `${horizontalPos}vw`;
+            bubble.style.animationDuration = `${duration}s`;
+            bubble.style.backgroundColor = color;
+            const charSpan = document.createElement('span');
+            charSpan.className = 'bubble-char';
+            charSpan.textContent = currentChars[Math.floor(random(0,currentChars.length))];
+            charSpan.style.fontSize = `${size*0.45}px`;
+            if (currentChars === gameData.hindi) charSpan.style.fontFamily = "'Baloo Bhai 2',cursive";
+            bubble.appendChild(charSpan);
+            bubble.onclick = e => popBubble(bubble,e.clientX,e.clientY);
+            bubble.addEventListener('animationend',() => bubble.remove());
+            bubbleContainer.appendChild(bubble);
+        }
+
+        function popBubble(bubble, x, y) {
+            if (bubble.classList.contains('popped')) return;
+            bubble.classList.add('popped');
+            popSound.currentTime = 0;
+            popSound.play();
+            createPopEffect(x, y);
+            score++;
+            updateScore();
+            triggerHelperReaction();
+            setTimeout(() => bubble.remove(), 200); 
+        }
+
+        // --- FEEDBACK FUNCTIONS ---
+        function createPopEffect(x, y) {
+            const popEffect = document.createElement('div');
+            popEffect.className = 'pop-effect';
+            document.body.appendChild(popEffect);
+            popEffect.style.left = `${x-50}px`;
+            popEffect.style.top = `${y-50}px`;
+            setTimeout(() => popEffect.remove(), 500);
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+        
+        let helperTimeout;
+        function triggerHelperReaction() {
+            helperAnimal.classList.add('happy');
+            clearTimeout(helperTimeout);
+            helperTimeout = setTimeout(() => {
+                helperAnimal.classList.remove('happy');
+            }, 400);
+        }
+    </script>
+</body>
+</html>
